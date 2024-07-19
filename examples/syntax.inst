@@ -1,0 +1,3 @@
+printf "Hello World\n"
+int a = 2 + 3
+printf a

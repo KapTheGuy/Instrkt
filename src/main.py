@@ -29,10 +29,13 @@ def compile(program, program_file):
 
         if lines[0].startswith("prints"):
             token = 1 # PRINT token
+        elif lines[0].startswith("int"):
+            token = 2 # INT token
+        elif lines[0].startswith("+"):
+            token = 3 # ADD token
         else:
             print('Invalid syntax')
             return
-
 
         if (token == 1):
             memname += "1"
@@ -49,12 +52,29 @@ def compile(program, program_file):
 
             out = out.replace("section .data\n", f"section .data\n {memname} db '{program[7:]}', 10, 0\n")
 
+        elif (token == 2):
+            out += f""" 
+                ; integer : push to stack
+                mov eax, {program[4:]}
+                push eax
+            """
+
+        elif (token == 3):
+            out += f""" 
+                ; integer : add
+                pop eax
+                pop ebx
+                add eax, ebx
+
+                mov ebx, eax
+            """
+
         lines = lines[1:]
 
     out += f"""
     ; exit the program
                 mov eax, 1         ; syscall number for sys_exit
-                xor ebx, ebx       ; exit status 0
+                ;xor ebx, ebx       ; exit status 0
                 int 0x80           ; make syscall
     """
 

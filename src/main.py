@@ -22,17 +22,27 @@ def compile(program, program_file):
 
     """
 
+    first = True
+    integer1 = 0
+    integer2 = 0
+
     while lines:
         token = 0
         program = lines[0].strip()
 
-
-        if lines[0].startswith("prints"):
+        if lines[0].startswith("std::out <<"):
             token = 1 # PRINT token
         elif lines[0].startswith("int"):
             token = 2 # INT token
+            if(first):
+                integer1 = int(program[4:])
+                first = False
+            else:
+                integer2 = int(program[4:])
         elif lines[0].startswith("+"):
             token = 3 # ADD token
+        elif lines[0].startswith("std::out_int >>"):
+            token = 4 # PRINT INT token
         else:
             print('Invalid syntax')
             return
@@ -46,11 +56,11 @@ def compile(program, program_file):
                 mov eax, 4         ; syscall number for sys_write
                 mov ebx, 1         ; file descriptor 1 (stdout)
                 mov ecx, {memname}     ; pointer to the message
-                mov edx, {len(program[7:]) + 2}    ; message length
+                mov edx, {len(program[12:]) + 2}    ; message length
                 int 0x80           ; make syscall
             """
 
-            out = out.replace("section .data\n", f"section .data\n {memname} db '{program[7:]}', 10, 0\n")
+            out = out.replace("section .data\n", f"section .data\n {memname} db '{program[12:]}', 10, 0\n")
 
         elif (token == 2):
             out += f""" 
@@ -67,6 +77,23 @@ def compile(program, program_file):
                 add eax, ebx
 
                 mov ebx, eax
+            """
+
+        elif (token == 4):
+
+            memname += "n1"
+
+            out = out.replace("section .data\n", f"section .data\n {memname} db '{str(integer1+integer2)}', 10, 0\n")
+            out = out.replace(f"section .data\n {memname} db '{str(integer1+integer2)}', 10, 0\n", f"section .data\n {memname} db '{str(integer1+integer2)}', 10, 0\n {memname + "len"} equ $-{memname}\n")
+
+            out += f""" 
+                ; integer : print
+                ; write the message to stdout
+                mov eax, 4         ; syscall number for sys_write
+                mov ebx, 1         ; file descriptor 1 (stdout)
+                mov ecx, {memname}     ; pointer to the message
+                mov edx, {memname + "len"}    ; message length
+                int 0x80           ; make syscall
             """
 
         lines = lines[1:]

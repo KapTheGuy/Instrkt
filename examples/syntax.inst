@@ -1,5 +1,5 @@
-prints Hello World
+std::out << Hello World
 int 2
 int 3
 +
-printi
+std::out_int >>
